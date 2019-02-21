@@ -54,6 +54,12 @@ class DemoChatMessageFactory {
         let photoMessageModel = DemoPhotoMessageModel(messageModel: messageModel, imageSize: size, image: image)
         return photoMessageModel
     }
+    
+    class func makeFileMessage(_ uid: String, url: URL, name: String, isIncoming: Bool) -> DemoFileMessageModel {
+        return DemoFileMessageModel(messageModel: self.makeMessageModel(uid, isIncoming: isIncoming, type: DemoFileMessageModel.chatItemType),
+                                    url: url,
+                                    name: name)
+    }
 
     static func makeCompoundMessage(isIncoming: Bool) -> DemoCompoundMessageModel {
         let messageModel = self.makeMessageModel(UUID().uuidString,
@@ -117,6 +123,12 @@ extension PhotoMessageModel {
     }
 }
 
+extension DemoFileMessageModel {
+    static var chatItemType: ChatItemType {
+        return "file"
+    }
+}
+
 extension ChatItemType {
     static var compoundItemType = "compound"
 }
@@ -126,6 +138,7 @@ extension DemoChatMessageFactory {
     private enum DemoMessage {
         case text(String)
         case image(String)
+        case file((URL, String))
     }
 
     private static let overviewMessages: [DemoMessage] = [
@@ -141,7 +154,8 @@ extension DemoChatMessageFactory {
         .text("Each message is paired with a Presenter. Each presenter is responsible to present a message by managing a corresponding UICollectionViewCell. New types of messages can be easily added by creating new types of presenters!"),
         .text("Messages have different margins and only some bubbles show a tail. This is done with a decorator that conforms to ChatItemsDecoratorProtocol"),
         .text("Failed/sending status are completly separated cells. This helps to keep cells them simpler. They are generated with the decorator as well, but other approaches are possible, like being returned by the DataSource or using more complex cells"),
-        .text("More info on https://github.com/badoo/Chatto. We are waiting for your pull requests!")
+        .text("More info on https://github.com/badoo/Chatto. We are waiting for your pull requests!"),
+        .file((URL(string: "https://filecoin.io/filecoin.pdf")!, "Filecoin whitepaper"))
     ]
 
     private static func messages(fromDemoMessages demoMessages: [DemoMessage]) -> [MessageModelProtocol] {
@@ -153,6 +167,11 @@ extension DemoChatMessageFactory {
             case .image(let name):
                 let image = UIImage(named: name)!
                 return DemoChatMessageFactory.makePhotoMessage(NSUUID().uuidString, image: image, size: image.size, isIncoming: isIncoming)
+            case .file((let url, let name)):
+                return DemoChatMessageFactory.makeFileMessage(NSUUID().uuidString,
+                                                              url: url,
+                                                              name: name,
+                                                              isIncoming: isIncoming)
             }
         }
     }

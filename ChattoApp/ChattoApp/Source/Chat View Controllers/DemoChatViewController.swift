@@ -47,6 +47,7 @@ class DemoChatViewController: BaseChatViewController {
         super.viewDidLoad()
 
         self.title = "Chat"
+        self.view.backgroundColor = UIColor(red: 0.95, green: 0.95, blue: 0.96, alpha: 1)
         self.messagesSelector.delegate = self
         self.chatItemsDecorator = DemoChatItemsDecorator(messagesSelector: self.messagesSelector)
     }
@@ -74,36 +75,58 @@ class DemoChatViewController: BaseChatViewController {
     }
 
     override func createPresenterBuilders() -> [ChatItemType: [ChatItemPresenterBuilderProtocol]] {
-
+        let baseMessageStyle = BaseMessageCollectionViewCellDefaultStyle(
+            colors: BaseMessageCollectionViewCellDefaultStyle.Colors(
+                incoming: .white,
+                outgoing: UIColor(red: 0, green: 0.68, blue: 0.79, alpha: 1)
+            ),
+            bubbleBorderImages: nil,
+            avatarStyle: BaseMessageCollectionViewCellDefaultStyle.AvatarStyle(size: .zero, alignment: .top)
+        )
         let textMessagePresenter = TextMessagePresenterBuilder(
             viewModelBuilder: DemoTextMessageViewModelBuilder(),
             interactionHandler: GenericMessageHandler(baseHandler: self.baseMessageHandler)
         )
-        textMessagePresenter.baseMessageStyle = BaseMessageCollectionViewCellAvatarStyle()
-
+        let bubbleImages = TextMessageCollectionViewCellDefaultStyle.BubbleImages(
+            incomingTail: UIImage(named: "IncomingTail")!,
+            incomingNoTail: UIImage(named: "IncomingNoTail")!,
+            outgoingTail: UIImage(named: "OutgoingTail")!,
+            outgoingNoTail: UIImage(named: "OutgoingNoTail")!
+        )
+        textMessagePresenter.baseMessageStyle = baseMessageStyle
+        textMessagePresenter.textCellStyle = TextMessageCollectionViewCellDefaultStyle(
+            bubbleImages: bubbleImages,
+            baseStyle: baseMessageStyle
+        )
+        
         let photoMessagePresenter = PhotoMessagePresenterBuilder(
             viewModelBuilder: DemoPhotoMessageViewModelBuilder(),
             interactionHandler: GenericMessageHandler(baseHandler: self.baseMessageHandler)
         )
-        photoMessagePresenter.baseCellStyle = BaseMessageCollectionViewCellAvatarStyle()
-
-        let compoundPresenterBuilder = CompoundMessagePresenterBuilder(
-            viewModelBuilder: DemoCompoundMessageViewModelBuilder(),
-            interactionHandler: GenericMessageHandler(baseHandler: self.baseMessageHandler),
-            contentFactories: [
-                .init(DemoTextMessageContentFactory()),
-                .init(DemoImageMessageContentFactory()),
-                .init(DemoDateMessageContentFactory())
-            ]
+        photoMessagePresenter.baseCellStyle = baseMessageStyle
+        photoMessagePresenter.photoCellStyle = PhotoMessageCollectionViewCellDefaultStyle(
+            bubbleMasks: PhotoMessageCollectionViewCellDefaultStyle.BubbleMasks(
+                incomingTail: UIImage(named: "IncomingTail")!,
+                incomingNoTail: UIImage(named: "IncomingNoTail")!,
+                outgoingTail: UIImage(named: "OutgoingTail")!,
+                outgoingNoTail: UIImage(named: "OutgoingNoTail")!,
+                tailWidth: 6
+            ),
+            baseStyle: baseMessageStyle
         )
-        compoundPresenterBuilder.baseCellStyle = BaseMessageCollectionViewCellAvatarStyle()
-
+        
+        let fileMessagePresenterBuilder = DemoFileMessagePresenterBuilder(
+            viewModelBuilder: DemoFileMessageViewModelBuilder(),
+            interactionHandler: DemoFileMessageHandler(baseHandler: self.baseMessageHandler)
+        )
+        fileMessagePresenterBuilder.style = baseMessageStyle
+        
         return [
             DemoTextMessageModel.chatItemType: [textMessagePresenter],
             DemoPhotoMessageModel.chatItemType: [photoMessagePresenter],
+            DemoFileMessageModel.chatItemType: [fileMessagePresenterBuilder],
             SendingStatusModel.chatItemType: [SendingStatusPresenterBuilder()],
-            TimeSeparatorModel.chatItemType: [TimeSeparatorPresenterBuilder()],
-            ChatItemType.compoundItemType: [compoundPresenterBuilder]
+            TimeSeparatorModel.chatItemType: [TimeSeparatorPresenterBuilder()]
         ]
     }
 
